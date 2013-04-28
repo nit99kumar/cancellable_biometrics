@@ -1,0 +1,106 @@
+function [template] = template_generation1(mint_data,user_pin,M)
+
+    % determine the size of the matrix
+    [row ~] = size(mint_data);
+    
+    % declaring the template array
+    rand('twister',user_pin);
+    col = randi([1000,1500],1);
+    template = -ones(row,col);
+    
+    % for normalisation of the distance parameter
+    %p = col / (M + col);
+    %r = (p) / ( p - 1);
+    %s = 1 - r;
+    
+    % generating permutation matrices
+    rand('twister',user_pin);
+    [~,b] = sort(rand(col,4));
+  
+    % extract the minutiae data from matrix according to the classification
+    coord = cell2mat(mint_data(:,(2:3)));
+    angle = cell2mat(mint_data(:,4));
+    type = mint_data(:,6);
+    nat = mint_data(:,7);
+    
+    % converting the angle into radians
+    for i = 1:row
+        angle(i) = angle(i) * 11.25;
+        angle(i) = (angle(i) / 180) * pi;
+    end
+
+    % performing the transformation
+    for r = 1:row
+        new_coord(:,1) = coord(:,1) - coord(r,1);
+        new_coord(:,2) = -(coord(:,2) - coord(r,2));
+        new_angle = angle - angle(r);
+        
+        % finding the transformation matrix
+        %mat = [cos(angle(r)) -sin(angle(r)) 0;
+        %       sin(angle(r)) cos(angle(r)) 0;    
+        %       0 0 1];
+
+        % finding the transformed template
+        for i = 1:row
+            %temp = [coord(i,1) coord(i,2) angle(i)];
+            %transformed_minutia = mat * temp';
+            %diff_angle = abs(angle(i) - angle(r));
+            diff_angle = min(new_angle(i), (2*pi)-new_angle(i));
+            %cb_distance = new_coord(1) + new_coord(2);
+            %ncb_distance = (cb_distance + col) / (M + col);
+            %ncb_distance = (s * ncb_distance) + r;
+            
+            cos_angle = cos(diff_angle);
+            %similarity = ncb_distance + cos_angle;
+            similarity = cos_angle;
+            % if the type of the reference minutia is the same as the other
+            % minutia assign a score of 1 else assign a score of -1
+            if(strcmp(type(r),type(i)) == 0)
+                similarity = -similarity;
+            end
+            
+            template(r,i) = floor(similarity + 1);%similarity + 2; 
+            %if(template(r,i) >= 0 && template(r,i) < 0.8)
+            %    template(r,i) = 0;
+            %end
+            %if(template(r,i) >= 0.8 && template(r,i) < 1.6)
+            %    template(r,i) = 0.8;
+            %end
+            %if(template(r,i) >= 1.6 && template(r,i) < 2.4)
+            %    template(r,i) = 1.6;
+            %end
+            %if(template(r,i) >= 2.4 && template(r,i) < 3.2)
+            %    template(r,i) = 2.4;
+            %end
+            %if(template(r,i) >= 3.2 && template(r,i) < 4.0)
+            %    template(r,i) = 3.2;
+            %end
+            %if(template(r,i) >= 3.5 && template(r,i) < 4)
+            %    template(r,i) = 3.5;
+            %end
+        end
+        
+        % permuting the generated template
+        
+        if(strcmp(type(r),'RIG ') == 1)% && strcmp(nat(r),' APP ') == 1)
+            z = b(:,1);
+        end
+        %if(strcmp(type(r),'RIG ') == 1 && strcmp(nat(r),' APP ') == 0)
+        %    z = b(:,2);
+        %end
+        if(strcmp(type(r),'RIG ') == 0)% && strcmp(nat(r),' APP ') == 1)
+            z = b(:,3);
+        end
+        %if(strcmp(type(r),'RIG ') == 0 && strcmp(nat(r),' APP ') == 0)
+        %    z = b(:,4);
+        %end
+        
+        % permuting the original bitstring
+        for j = 1:col
+            a = z(j);
+            c = template(r,j);
+            template(r,j) = template(r,a);
+            template(r,a) = c;
+        end
+    end
+end

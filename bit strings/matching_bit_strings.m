@@ -1,0 +1,104 @@
+function[flag] = matching_bit_strings(bit_string1, bit_string2,th)
+
+    %finding the number of template bit strings in each array
+    [row1 ~] = size(bit_string1);
+    [row2 ~] = size(bit_string2);
+    
+    SAij = zeros(row2,row1);
+    sum1 = zeros(row1,1);
+    sum2 = zeros(row1,1);
+    SAmax = zeros(row2,1);
+    S = zeros(row2,1);
+    T = 0;
+    Nei = zeros(row1,1);
+    Nqj = zeros(row2,1);
+    
+    % finding the number of ones in the template bit strings
+    for i = 1:row1
+        a = size(find(bit_string1(i,:) == 1));
+        Nei(i) = a(2);
+    end
+    % finding the number of ones in the query bit strings
+    for i = 1:row2
+        a = size(find(bit_string2(i,:) == 1));
+        Nqj(i) = a(2);
+    end
+    
+    % displaying Nei and Nqj
+    %disp Nei;disp(Nei);
+    %disp Nqj;disp(Nqj);
+    
+    % displaying the position of ones in the bit strings
+    %disp bit_string1;
+    %for i = 1:row1
+    %    for j = 1:col
+    %        if (bit_string1(i,j) == 1)
+    %            disp([i,j]);
+    %        end
+    %    end
+    %end
+    %disp bit_string2;
+    %for i = 1:row2
+    %    for j = 1:col
+    %        if (bit_string2(i,j) == 1)
+    %            disp([i,j]);
+    %        end
+    %    end
+    %end
+    
+    % similarity score between bitstrings
+    for j = 1:row2
+        for i = 1:row1
+        sum1(i) = Nqj(j) + Nei(i);
+            
+            % finding the number of common ones in the enrolled and the
+            % query fingerprint
+            c = bit_string2(j,:) & bit_string1(i,:);
+            sum2(i) = sum(c);
+            %disp sum2;disp (sum2);
+            % calculating SAij
+            e = Nei .* Nei;
+            f = Nqj .* Nqj;
+            SAij(j,i) = ((sum1(i) * sum2(i))) / (e(i)+f(j));
+        end
+    end
+    
+    % finding SAmax(j)
+    for j = 1:row2
+        SAmax(j) = max(SAij(j,:));
+    end
+    
+    %finding S(j)
+    for j = 1:row2
+        if(SAmax(j) > th)
+            S(j) = SAmax(j);
+        else
+            S(j) = 0;
+        end
+    end
+    % displaying the score values for all the minutiae templates
+    %disp Sj; disp (S);
+    % calculating T
+    for j = 1:row2
+        if(S(j) == 0)
+            continue;
+        else
+            T = T + 1;
+        end
+    end
+        
+    %calculating the final score
+    %disp row2/4;disp (row2/4);
+    %disp row1;disp (row1);
+    %disp T;disp (T);
+    score = sum(S) / T;
+    %disp score;disp (score);
+    %if (T >= (row2 / 4) && score >= 0.3)
+    if(score >= 0.3)
+        disp ('Match!');
+        flag = 1;
+    else
+        disp('Not a match!');
+        flag = 0;
+    end
+ end
